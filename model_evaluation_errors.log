@@ -1,0 +1,10 @@
+2026-11-10 22:45:43,614 - model_evaluation - ERROR - Error during model evaluation: pos_label=1 is not a valid label. It should be one of ['happiness' 'sadness']
+2026-11-10 22:45:43,614 - model_evaluation - ERROR - Failed to complete the model evaluation process: pos_label=1 is not a valid label. It should be one of ['happiness' 'sadness']
+2026-11-10 22:49:29,437 - model_evaluation - ERROR - Error during model evaluation: pos_label=1 is not a valid label. It should be one of ['happiness' 'sadness']
+2026-11-10 22:49:29,437 - model_evaluation - ERROR - Failed to complete the model evaluation process: pos_label=1 is not a valid label. It should be one of ['happiness' 'sadness']
+2026-11-10 22:52:17,660 - model_evaluation - ERROR - Error during model evaluation: invalid literal for int() with base 10: 'sadness'
+2026-11-10 22:52:17,661 - model_evaluation - ERROR - Failed to complete the model evaluation process: invalid literal for int() with base 10: 'sadness'
+2026-11-10 22:53:20,346 - model_evaluation - ERROR - Error during model evaluation: invalid literal for int() with base 10: 'sadness'
+2026-11-10 22:53:20,347 - model_evaluation - ERROR - Failed to complete the model evaluation process: invalid literal for int() with base 10: 'sadness'
+2026-11-10 22:56:16,196 - model_evaluation - ERROR - Error during model evaluation: pos_label=1 is not a valid label. It should be one of ['happiness' 'sadness']
+2026-11-10 22:56:16,197 - model_evaluation - ERROR - Failed to complete the model evaluation process: pos_label=1 is not a valid label. It should be one of ['happiness' 'sadness']
