@@ -18,6 +18,10 @@ dagshub_url = "https://dagshub.com"
 repo_owner = "samarjeetsinghpatil93-jpg"
 repo_name = "mlops-mini-project"
 
+# Set up MLflow tracking URI
+mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
+
+
 app = Flask(__name__)
 
 # load model from model registry
