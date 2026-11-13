@@ -6,6 +6,7 @@ import os
 import pandas as pd
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import pickle
+import numpy as np
 
 class TestModelLoading(unittest.TestCase):
 
@@ -67,9 +68,11 @@ class TestModelLoading(unittest.TestCase):
         # Extract features and labels from holdout test data
         X_holdout = self.holdout_data.iloc[:,0:-1]
         y_holdout = self.holdout_data.iloc[:,-1]
+        y_holdout = np.asarray(y_holdout).ravel()
 
         # Predict using the new model
         y_pred_new = self.new_model.predict(X_holdout)
+        y_holdout = np.asarray(y_pred_new).ravel()
 
         # Calculate performance metrics for the new model
         accuracy_new = accuracy_score(y_holdout, y_pred_new)
