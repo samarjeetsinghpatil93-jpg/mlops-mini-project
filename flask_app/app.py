@@ -2,7 +2,7 @@ import dagshub
 from flask import Flask, render_template, request
 import mlflow
 import pandas as pd
-from preprocessing_utility import normalize_text
+from .preprocessing_utility import normalize_text
 import pickle
 import os
 
