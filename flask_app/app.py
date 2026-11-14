@@ -1,15 +1,26 @@
-import dagshub
-from flask import Flask, render_template, request
+import logging
+import os
+import pickle
+from pathlib import Path
+
 import mlflow
 import pandas as pd
-from .preprocessing_utility import normalize_text
-import pickle
-import os
+from flask import Flask, render_template, request
+from mlflow.tracking import MlflowClient
 
-# Set up DagsHub credentials for MLflow tracking
+from .preprocessing_utility import normalize_text
+
+
+logger = logging.getLogger(__name__)
+
+
+# DagsHub credentials and MLflow configuration
 dagshub_token = os.getenv("DAGSHUB_PAT")
+
 if not dagshub_token:
-    raise EnvironmentError("DAGSHUB_PAT environment variable is not set")
+    raise EnvironmentError(
+        "DAGSHUB_PAT environment variable is not set"
+    )
 
 os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
 os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
@@ -18,55 +29,122 @@ dagshub_url = "https://dagshub.com"
 repo_owner = "samarjeetsinghpatil93-jpg"
 repo_name = "mlops-mini-project"
 
-# Set up MLflow tracking URI
-mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
+mlflow.set_tracking_uri(
+    f"{dagshub_url}/{repo_owner}/{repo_name}.mlflow"
+)
 
 
+# Initialize Flask application
 app = Flask(__name__)
 
-# load model from model registry
-def get_latest_model_version(model_name):
-    client = mlflow.MlflowClient()
-    latest_version = client.get_latest_versions(model_name, stages=["Production"])
-    if not latest_version:
-        latest_version = client.get_latest_versions(model_name, stages=["None"])
-    return latest_version[0].version if latest_version else None
 
-# load model from model registry
+def resolve_model_uri(model_name: str) -> str:
+    """
+    Resolve the MLflow model URI.
+
+    Prefer an explicitly configured model URI.
+    Otherwise, use the current Production model version.
+    """
+
+    configured_uri = os.getenv(
+        "MLFLOW_MODEL_URI", ""
+    ).strip()
+
+    if configured_uri:
+        return configured_uri
+
+    # Compatibility fallback for the current DagsHub registry.
+    # MLflow stage APIs are deprecated.
+    client = MlflowClient()
+
+    versions = client.get_latest_versions(
+        model_name,
+        stages=["Production"]
+    )
+
+    if not versions:
+        raise RuntimeError(
+            f"No Production version found for model "
+            f"{model_name!r}. Promote a reviewed model "
+            f"or configure MLFLOW_MODEL_URI."
+        )
+
+    latest = max(
+        versions,
+        key=lambda version: int(version.version)
+    )
+
+    return f"models:/{model_name}/{latest.version}"
+
+
+# Load model from MLflow Model Registry
 model_name = "my_model"
-model_version = get_latest_model_version(model_name)
 
-model_uri = f"models:/{model_name}/{model_version}"
+model_uri = resolve_model_uri(model_name)
+
+logger.info(
+    "Loading MLflow model from %s",
+    model_uri
+)
+
 model = mlflow.pyfunc.load_model(model_uri)
 
-vectorizer = pickle.load(open('models/vectorizer.pkl', 'rb'))
+
+# Load vectorizer
+vectorizer_path = (
+    Path(__file__).resolve().parent.parent
+    / "models"
+    / "vectorizer.pkl"
+)
+
+with vectorizer_path.open("rb") as vectorizer_file:
+    vectorizer = pickle.load(vectorizer_file)
 
 
-@app.route('/')
+# Home page
+@app.route("/")
 def home():
-    return render_template('index.html', result=None)
+    return render_template(
+        "index.html",
+        result=None
+    )
 
 
-@app.route('/predict', methods=['POST'])
+# Prediction endpoint
+@app.route("/predict", methods=["POST"])
 def predict():
 
-    text = request.form['text']
+    # Extract input text
+    text = request.form["text"]
 
-    # clean
+    # Normalize text
     text = normalize_text(text)
 
-    # bow
+    # Convert text into Bag-of-Words features
     features = vectorizer.transform([text])
 
-    # Convert sparse matrix to DataFrame
-    features_df = pd.DataFrame.sparse.from_spmatrix(features)
-    features_df = pd.DataFrame(features.toarray(), columns=[str(i) for i in range(features.shape[1])])
+    # Convert features into DataFrame
+    features_df = pd.DataFrame(
+        features.toarray(),
+        columns=[
+            str(index)
+            for index in range(features.shape[1])
+        ]
+    )
 
-    # prediction
-    result = model.predict(features_df)
+    # Generate prediction
+    prediction = model.predict(features_df)
 
-    return render_template('index.html', result=result[0])
+    # Return prediction
+    return render_template(
+        "index.html",
+        result=prediction[0]
+    )
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0")
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=False
+    )
