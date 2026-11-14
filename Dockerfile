@@ -21,4 +21,4 @@ COPY models/vectorizer.pkl ./models/vectorizer.pkl
 EXPOSE 5000
 
 # Run Flask as a Python package
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "flask_app.app"]
+CMD ["gunicorn", "-b", "0.0.0.0:5000", "flask_app.app:app"]
