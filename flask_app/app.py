@@ -110,32 +110,21 @@ def home():
     )
 
 
-# Prediction endpoint
 @app.route("/predict", methods=["POST"])
 def predict():
 
-    # Extract input text
+    # Get input text
     text = request.form["text"]
 
     # Normalize text
     text = normalize_text(text)
 
-    # Convert text into Bag-of-Words features
+    # Convert text to sparse Bag-of-Words features
     features = vectorizer.transform([text])
 
-    # Convert features into DataFrame
-    features_df = pd.DataFrame(
-        features.toarray(),
-        columns=[
-            str(index)
-            for index in range(features.shape[1])
-        ]
-    )
+    # Predict directly using the sparse matrix
+    prediction = model.predict(features)
 
-    # Generate prediction
-    prediction = model.predict(features_df)
-
-    # Return prediction
     return render_template(
         "index.html",
         result=prediction[0]
